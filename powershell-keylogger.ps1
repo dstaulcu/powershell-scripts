@@ -1,8 +1,3 @@
-<#
-PowerShell keystroke logger by shima
-http://vacmf.org/2013/01/23/powershell-keylogger/
-#>
-
 Add-Type @"
     using System;
     using System.Runtime.InteropServices;
